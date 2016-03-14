@@ -1,6 +1,7 @@
 {CompositeDisposable} = require 'atom'
 LabelView = require './label-view'
 CiteView = require './cite-view'
+TermView = require './term-view'
 
 module.exports =
   class LatexerHook
@@ -8,6 +9,7 @@ module.exports =
     mathRex: /(\\+)\[/
     refRex: /\\\w*ref({|{[^}]+,)$/
     citeRex: /\\(cite|textcite|onlinecite|citet|citep|citet\*|citep\*)(\[[^\]]+\])?({|{[^}]+,)$/
+    termRex: /\\(gls\w*|acrlong|acrshort|acrfull)({|{[^}]+,)$/
     constructor: (@editor) ->
       @disposables = new CompositeDisposable
       @disposables.add @editor.onDidChangeTitle => @subscribeBuffer()
@@ -18,12 +20,14 @@ module.exports =
       @subscribeBuffer()
       @lv = new LabelView
       @cv = new CiteView
+      @tv = new TermView
 
     destroy: ->
       @unsubscribeBuffer()
       @disposables.dispose()
       @lv?.hide()
       @cv?.hide()
+      @tv?.hide()
 
 
     subscribeBuffer: ->
@@ -38,13 +42,15 @@ module.exports =
       @disposableBuffer?.dispose()
       @buffer = null
 
-    refCiteCheck: (editor, refOpt, citeOpt)->
+    refCiteCheck: (editor, refOpt, citeOpt, termOpt)->
       pos = editor.getCursorBufferPosition().toArray()
       line = editor.getTextInBufferRange([[pos[0], 0], pos])
       if refOpt and (match = line.match(@refRex))
         @lv.show(editor)
       if citeOpt and (match = line.match(@citeRex))
         @cv.show(editor)
+      if citeOpt and (match = line.match(@termRex))
+        @tv.show(editor)
 
     environmentCheck: (editor)->
       pos = editor.getCursorBufferPosition().toArray()
@@ -80,5 +86,6 @@ module.exports =
       envOpt = atom.config.get "latexer.autocomplete_environments"
       refOpt = atom.config.get "latexer.autocomplete_references"
       citeOpt = atom.config.get "latexer.autocomplete_citations"
-      @refCiteCheck(editor, refOpt, citeOpt) if refOpt or citeOpt
+      termOpt = atom.config.get "latexer.autocomplete_terms"
+      @refCiteCheck(editor, refOpt, citeOpt, termOpt) if refOpt or citeOpt or termOpt
       @environmentCheck(editor) if envOpt

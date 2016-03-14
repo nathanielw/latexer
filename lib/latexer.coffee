@@ -30,17 +30,23 @@ module.exports = Latexer =
       type: "boolean"
       default: true
 
+    autocomplete_terms:
+      type: "boolean"
+      default: true
+
 
   activate: ->
     instance = this
     atom.commands.add "atom-text-editor",
       "latexer:omnicomplete": (event)->
-        instance.latexHook.refCiteCheck @getModel(), true, true
+        instance.latexHook.refCiteCheck @getModel(), true, true, true
         instance.latexHook.environmentCheck @getModel()
       "latexer:insert-reference": (event)->
         instance.latexHook.lv.show @getModel()
       "latexer:insert-citation": (event)->
         instance.latexHook.cv.show @getModel()
+      "latexer:insert-term": (event)->
+        instance.latexHook.tv.show @getModel()
     atom.workspace.observeTextEditors (editor) =>
       @latexHook = new LatexerHook(editor)
 
